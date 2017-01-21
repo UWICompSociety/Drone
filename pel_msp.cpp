@@ -247,7 +247,6 @@ pel_msp_altitude(uint8_t *buf)
     est_alt = readint16(buf);
     vario = readint16(buf + sizeof (int32_t));
 
-
     pel_log_debug("Altitude Recieved: ");
     pel_log_debug(est_alt);
     pel_log_debug(", ");
