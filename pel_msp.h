@@ -70,6 +70,18 @@ extern void pel_msp_raw_imu(uint8_t *buf);
 extern void pel_msp_altitude(uint8_t *buf);
 extern void pel_msp_rc(uint8_t *buf);
 extern void pel_msp_ident(uint8_t *buf);
+extern void pel_msp_status(uint8_t *buf);
+extern void pel_msp_servo(uint8_t *buf);
+extern void pel_msp_motor(uint8_t *buf);
+extern void pel__msp_comp_gpx(uint8_t *buf);
+extern void pel_msp_analog(uint8_t *buf);
+extern void pel_msp_rc_tuning(uint8_t *buf);
+extern void pel_msp_pid(uint8_t *buf);
+extern void pel_msp_box(uint8_t *buf);
+extern void pel_msp_misc(uint8_t *buf);
+extern void pel_msp_motor_pins(uint8_t *buf);
+extern void pel_msp_wp(uint8_t *buf);
+extern void pel_msp_select_settings(uint8_t *buf);
 
 #endif /* PEL_PROTOCOL_H */
 
