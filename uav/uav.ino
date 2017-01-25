@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdint.h>
 
 #include <Servo.h>
 #include <SoftwareSerial.h>
@@ -20,7 +21,7 @@
 
 static uint8_t type;
 static char replybuffer[255];
-static bool armed;
+static int8_t armed;
 
 static SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
 static SoftwareSerial *fonaSerial = &fonaSS;
@@ -50,9 +51,9 @@ static void apply_aux1(int value);
 static void apply_aux2(int value);
 static void take_off(float height);
 static void check_height(void);
-static bool get_drone_location(float& lat, float& lon);
+static int8_t get_drone_location(float& lat, float& lon);
 static float convertDegMinToDecDeg(float degMin);
-static bool get_destination(float& lat, float &lon);
+static int8_t get_destination(float& lat, float &lon);
 
 void
 setup(void)
@@ -187,7 +188,7 @@ arm(void)
         apply_throttle(885);
         apply_aux2(1800); //moves from out of range to into range
         apply_aux1(1400);
-        armed = true;
+        armed = 1;
         delay(3000);
     }
 }
@@ -255,7 +256,7 @@ check_height(void)
     /* TODO */ 
 }
 
-static bool
+static int8_t
 get_drone_location(float& lat, float& lon)
 {
     float latitude, longitude, speed_kph, heading, altitude;
@@ -267,7 +268,7 @@ get_drone_location(float& lat, float& lon)
     Serial.print(lat);
     Serial.print(lon);
     
-    return gpsFix;
+    return gpsFix ? 1 : 0;
 }
 
 //used to convert fona gps output to actual location coordinate in degrees
@@ -288,7 +289,7 @@ convertDegMinToDecDeg(float degMin)
 }
 
 //gets gps coordinates from server
-static bool
+static int8_t
 get_destination(float& lat, float &lon)
 {
     // Prepare request
@@ -305,7 +306,7 @@ get_destination(float& lat, float &lon)
     // Get location
     if (!fona.HTTP_GET_start(buf, &statuscode, (uint16_t *) &length)) {
         Serial.println("Failed!");
-        return false;
+        return 0;
     }
     
     char response[255];
@@ -340,10 +341,10 @@ get_destination(float& lat, float &lon)
             lat = root["lat"].as<float>();
             lon = root["lon"].as<float>();
             
-            return true; 
+            return 1;
         }
     }
 
-    return false;
+    return 0;
 }
 
