@@ -304,7 +304,7 @@ pel_msp_status(uint8_t *buf)
 
     cycle_time = readuint16(buf);
     i2c_errors_count = readuint16(buf + 2);
-    sonsor = readuint16(buf + 4);
+    sensor = readuint16(buf + 4);
     flag = readuint32(buf + 6);
     global_conf_currentset = readuint8(buf + 10);
 
