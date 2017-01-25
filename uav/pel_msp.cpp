@@ -501,10 +501,10 @@ pel_msp_misc(uint8_t *buf)
     arm = readuint16(buf + 10);
     lifetime = readuint32(buf + 12);
     mag_declination = readuint16(buf + 16);
-    vbat_scale = readuint8(buf + 18);
-    vbatlevel_warn1 = readuint8(buf + 19);
-    vbatlevel_warn2 = readuint8(buf + 20);
-    vbatlevel_crit = readuint8(buf + 21);
+    vbat_scale = buf[18];
+    vbatlevel_warn1 = buf[19];
+    vbatlevel_warn2 = buf[20];
+    vbatlevel_crit = buf[21];
 
     pel_log_debug("Miscellaneous: ");
     pel_log_debug(power_trigger);
@@ -567,7 +567,7 @@ pel_msp_wp(uint8_t *buf)
     alt_hold = readuint32(buf + 9);
     heading = readuint16(buf + 13);
     time_to_stay = readuint16(buf + 15);
-    nav_flag = readuint8(buf + 17);
+    nav_flag = buf[17];
 
     pel_log_debug(wp_no);
     pel_log_debug(",");
