@@ -1,10 +1,12 @@
-// Libraries
-#include "Adafruit_FONA.h"
-#include <SoftwareSerial.h>
+#include <math.h>
+
 #include <Servo.h>
+#include <SoftwareSerial.h>
+
 //#include "DHT.h"
-#include <ArduinoJson.h>
-#include "math.h"
+#include "Adafruit_FONA.h"
+#include "ArduinoJson.h"
+
 // Pins
 #define FONA_RX 2
 #define FONA_TX 10
@@ -16,25 +18,21 @@
 #define AUX1_PIN 5
 #define AUX2_PIN 4
 
-// Buffer
-char replybuffer[255];
+static uint8_t type;
+static char replybuffer[255];
+static bool armed;
 
-// Instances
-SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
-SoftwareSerial *fonaSerial = &fonaSS;
+static SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
+static SoftwareSerial *fonaSerial = &fonaSS;
 
-// Fona instance
-Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
-uint8_t type;
+static Servo pitchServo;
+static Servo yawServo;
+static Servo rollServo;
+static Servo throttleServo;
+static Servo aux1Servo;
+static Servo aux2Servo;
 
-Servo pitchServo;
-Servo yawServo;
-Servo rollServo;
-Servo throttleServo;
-Servo aux1Servo;
-Servo aux2Servo;
-
-bool armed;
+static Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
 
 static void set_up_servos(void);
 static void setUpFona(void);
