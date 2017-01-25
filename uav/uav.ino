@@ -36,6 +36,26 @@ Servo aux2Servo;
 
 bool armed;
 
+static void set_up_servos(void);
+static void setUpFona(void);
+static float calc_distance(float lat1,float lon1, float lat2, float lon2);
+static float calc_bearing(float lat1,float lon1,float lat2, float lon2);
+static float deg_to_rad(float degrees);
+static float rad_to_deg(float radians);
+static void arm(void);
+static void disarm(void);
+static void apply_pitch(float value);
+static void apply_yaw(float value);
+static void apply_roll(float value);
+static void apply_throttle(float value);
+static void apply_aux1(int value);
+static void apply_aux2(int value);
+static void take_off(float height);
+static void check_height(void);
+static bool get_drone_location(float& lat, float& lon);
+static float convertDegMinToDecDeg(float degMin);
+static bool get_destination(float& lat, float &lon);
+
 void
 setup(void)
 {
@@ -65,7 +85,7 @@ loop(void)
   delay(60 * 1000);
 }
 
-void
+static void
 set_up_servos(void)
 {
   pinMode(PITCH_PIN,OUTPUT);
@@ -87,7 +107,7 @@ set_up_servos(void)
   aux2Servo.attach(AUX2_PIN);
 }
 
-void
+static void
 setUpFona(void)
 {
   // Initi serial
@@ -118,7 +138,7 @@ setUpFona(void)
   Serial.println("GPRS enabled");
 }
 
-float
+static float
 calc_distance(float lat1,float lon1, float lat2, float lon2)
 {
   float R = 6371e3;
@@ -141,7 +161,7 @@ calc_distance(float lat1,float lon1, float lat2, float lon2)
 }
 
 //returns bearing in degrees
-float
+static float
 calc_bearing(float lat1,float lon1,float lat2, float lon2)
 {
   float y = sin(lon2-lon1) * cos(lat2);
@@ -152,20 +172,20 @@ calc_bearing(float lat1,float lon1,float lat2, float lon2)
 }
 
 //converts degrees to radians
-float
+static float
 deg_to_rad(float degrees)
 {
   return (degrees* M_PI)/180;
 }
 
 //converts radians to degrees
-float
+static float
 rad_to_deg(float radians)
 {
   return (radians*180)/M_PI;
 }
 
-void
+static void
 arm(void)
 {
   if(!armed)
@@ -181,7 +201,7 @@ arm(void)
    }
 }
  
-void
+static void
 disarm(void)
 {
   if(armed)
@@ -191,47 +211,47 @@ disarm(void)
   
 }
 
-void
+static void
 apply_pitch(float value)
 {
   pitchServo.writeMicroseconds(value);
   // apply PWM for pitch
 }
 
-void
+static void
 apply_yaw(float value)
 {
   yawServo.writeMicroseconds(value);
   // apply PWM for yaw
 }
 
-void
+static void
 apply_roll(float value)
 {
   rollServo.writeMicroseconds(value);
   // call MSP API to apply roll to drone
 }
 
-void
+static void
 apply_throttle(float value)
 {
   throttleServo.writeMicroseconds(value);
   // call MSP API to apply throttle to drone
 }
 
-void
+static void
 apply_aux1(int value)
 {
   aux1Servo.write(value);
 }
 
-void
+static void
 apply_aux2(int value)
 {
   aux2Servo.write(value);
 }
 
-void
+static void
 take_off(float height)
 {
   arm();
@@ -242,12 +262,12 @@ take_off(float height)
   }
 }
 
-void
+static void
 check_height(void)
 { 
 }
 
-bool
+static bool
 get_drone_location(float& lat, float& lon)
 {
   float latitude, longitude, speed_kph, heading, altitude;
@@ -263,7 +283,7 @@ get_drone_location(float& lat, float& lon)
 }
 
 //used to convert fona gps output to actual location coordinate in degrees
-float
+static float
 convertDegMinToDecDeg(float degMin)
 {
   double min = 0.0;
@@ -280,7 +300,7 @@ convertDegMinToDecDeg(float degMin)
 }
 
 //gets gps coordinates from server
-bool
+static bool
 get_destination(float& lat, float &lon)
 {
    // Prepare request
