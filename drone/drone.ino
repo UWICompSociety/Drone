@@ -1,6 +1,7 @@
 // Libraries
 #include "Adafruit_FONA.h"
 #include <SoftwareSerial.h>
+#include <Servo.h>
 //#include "DHT.h"
 #include <ArduinoJson.h>
 #include "math.h"
@@ -8,6 +9,12 @@
 #define FONA_RX 2
 #define FONA_TX 10
 #define FONA_RST 4
+#define PITCH_PIN 9
+#define YAW_PIN 8
+#define ROLL_PIN 7
+#define THROTTLE_PIN 6
+#define AUX1_PIN 5
+#define AUX2_PIN 4
 
 // Buffer
 char replybuffer[255];
@@ -20,11 +27,21 @@ SoftwareSerial *fonaSerial = &fonaSS;
 Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
 uint8_t type;
 
+Servo pitchServo;
+Servo yawServo;
+Servo rollServo;
+Servo throttleServo;
+Servo aux1Servo;
+Servo aux2Servo;
+
+bool armed;
+
 
 
 void setup() {
 
   setUpFona(); //used to set up fona 
+  set_up_servos();
 
 }
 
@@ -45,13 +62,32 @@ void loop() {
 
   
   bearing = calc_bearing(origin_lat,origin_lon,dest_lat,dest_lon); //calculate heading to target
-
-  
   
   
   // Wait
   delay(60 * 1000);
   
+}
+
+void set_up_servos()
+{
+  pinMode(PITCH_PIN,OUTPUT);
+  pitchServo.attach(PITCH_PIN);
+
+  pinMode(ROLL_PIN,OUTPUT);
+  rollServo.attach(ROLL_PIN);
+
+  pinMode(YAW_PIN,OUTPUT);
+  yawServo.attach(YAW_PIN);
+
+  pinMode(THROTTLE_PIN,OUTPUT);
+  throttleServo.attach(THROTTLE_PIN);
+
+  pinMode(AUX1_PIN,OUTPUT);
+  aux1Servo.attach(AUX1_PIN);
+
+  pinMode(AUX2_PIN,OUTPUT);
+  aux2Servo.attach(AUX2_PIN);
 }
 
 void setUpFona()
@@ -83,6 +119,8 @@ void setUpFona()
   while(!fona.enableGPRS(true));
   Serial.println("GPRS enabled");
 }
+
+
 
 
 
@@ -134,27 +172,83 @@ float rad_to_deg(float radians)
 }
 
 
+
+void arm()
+{
+  if(!armed)
+  {
+    apply_roll(1500);
+    apply_pitch(1500);
+    apply_yaw(1500);
+    apply_throttle(885);
+    apply_aux2(1800);//moves from out of range to into range
+    apply_aux1(1400);
+    armed = true;
+    delay(3000);
+   }
+}
+ 
+
+void disarm()
+{
+  if(armed)
+  {
+    apply_aux2(1200); //move out of range.
+  }
+  
+}
+
+
 void apply_pitch(float value)
 {
-  // call MSP API to apply pitch to drone
+  pitchServo.writeMicroseconds(value);
+  // apply PWM for pitch
 }
 
 void apply_yaw(float value)
 {
-  // call MSP API to apply yaw to drone
+  yawServo.writeMicroseconds(value);
+  // apply PWM for yaw
 }
 
 void apply_roll(float value)
 {
+  rollServo.writeMicroseconds(value);
   // call MSP API to apply roll to drone
 }
 
-void apply_throttle(float throttle)
+void apply_throttle(float value)
 {
+  throttleServo.writeMicroseconds(value);
   // call MSP API to apply throttle to drone
 }
 
+void apply_aux1(int value)
+{
+  aux1Servo.write(value);
+}
 
+void apply_aux2(int value)
+{
+  aux2Servo.write(value);
+}
+
+void take_off(float height)
+{
+  arm();
+  if(armed)
+  {
+    apply_throttle(1500);
+    check_height();
+    
+  }
+}
+
+
+void check_height()
+{
+  
+}
 
 bool get_drone_location(float& lat, float& lon)
 {
