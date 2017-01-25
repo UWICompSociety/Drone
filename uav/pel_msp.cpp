@@ -367,7 +367,7 @@ pel_msp_comp_gps(uint8_t *buf)
     uint8_t update;
 
     distance_to_home = readuint16(buf);
-    direction_to_home = readuint(buf + 2);
+    direction_to_home = readuint16(buf + 2);
     update = buf[4];
 
     pel_log_debug("Home GPS Recieved: ");
