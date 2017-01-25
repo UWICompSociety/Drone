@@ -53,8 +53,8 @@
 
 /*
  * The argument m points to a buffer.  The buffer's contents will not be modified.
- * The argument is surrounded in parentheses because of pointer arithmetic.  These assume that
- * the host is big endian.  These also do not perform array bounds checking.
+ * The argument is surrounded in parentheses because of pointer arithmetic.
+ * These also do not perform array bounds checking.
  */
 #define readint16(m)  (int16_t) ((m)[1] << 8 | (m)[0])
 #define readuint16(m)           ((m)[1] << 8 | (m)[0])
