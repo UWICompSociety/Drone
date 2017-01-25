@@ -36,19 +36,16 @@ Servo aux2Servo;
 
 bool armed;
 
-
-
-void setup() {
-
+void
+setup(void)
+{
   setUpFona(); //used to set up fona 
   set_up_servos();
-
 }
 
-
-
-void loop() {
-
+void
+loop(void)
+{
   float distance,bearing,origin_lon,origin_lat,dest_lat,dest_lon;
 
   
@@ -66,10 +63,10 @@ void loop() {
   
   // Wait
   delay(60 * 1000);
-  
 }
 
-void set_up_servos()
+void
+set_up_servos(void)
 {
   pinMode(PITCH_PIN,OUTPUT);
   pitchServo.attach(PITCH_PIN);
@@ -90,7 +87,8 @@ void set_up_servos()
   aux2Servo.attach(AUX2_PIN);
 }
 
-void setUpFona()
+void
+setUpFona(void)
 {
   // Initi serial
   while (!Serial);
@@ -120,13 +118,9 @@ void setUpFona()
   Serial.println("GPRS enabled");
 }
 
-
-
-
-
-float calc_distance(float lat1,float lon1, float lat2, float lon2)
+float
+calc_distance(float lat1,float lon1, float lat2, float lon2)
 {
-
   float R = 6371e3;
   
   //Haversine Distance
@@ -144,36 +138,35 @@ float calc_distance(float lat1,float lon1, float lat2, float lon2)
   float d = R * c;
 
   return d;
-
 }
 
 //returns bearing in degrees
-float calc_bearing(float lat1,float lon1,float lat2, float lon2)
+float
+calc_bearing(float lat1,float lon1,float lat2, float lon2)
 {
   float y = sin(lon2-lon1) * cos(lat2);
   float x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2-lon1);
   float brng = rad_to_deg(atan(y/x));
   
-  
   return brng;
 }
 
-
 //converts degrees to radians
-float deg_to_rad(float degrees)
+float
+deg_to_rad(float degrees)
 {
   return (degrees* M_PI)/180;
 }
 
 //converts radians to degrees
-float rad_to_deg(float radians)
+float
+rad_to_deg(float radians)
 {
   return (radians*180)/M_PI;
 }
 
-
-
-void arm()
+void
+arm(void)
 {
   if(!armed)
   {
@@ -188,8 +181,8 @@ void arm()
    }
 }
  
-
-void disarm()
+void
+disarm(void)
 {
   if(armed)
   {
@@ -198,63 +191,67 @@ void disarm()
   
 }
 
-
-void apply_pitch(float value)
+void
+apply_pitch(float value)
 {
   pitchServo.writeMicroseconds(value);
   // apply PWM for pitch
 }
 
-void apply_yaw(float value)
+void
+apply_yaw(float value)
 {
   yawServo.writeMicroseconds(value);
   // apply PWM for yaw
 }
 
-void apply_roll(float value)
+void
+apply_roll(float value)
 {
   rollServo.writeMicroseconds(value);
   // call MSP API to apply roll to drone
 }
 
-void apply_throttle(float value)
+void
+apply_throttle(float value)
 {
   throttleServo.writeMicroseconds(value);
   // call MSP API to apply throttle to drone
 }
 
-void apply_aux1(int value)
+void
+apply_aux1(int value)
 {
   aux1Servo.write(value);
 }
 
-void apply_aux2(int value)
+void
+apply_aux2(int value)
 {
   aux2Servo.write(value);
 }
 
-void take_off(float height)
+void
+take_off(float height)
 {
   arm();
   if(armed)
   {
     apply_throttle(1500);
-    check_height();
-    
+    check_height(); 
   }
 }
 
-
-void check_height()
-{
-  
+void
+check_height(void)
+{ 
 }
 
-bool get_drone_location(float& lat, float& lon)
+bool
+get_drone_location(float& lat, float& lon)
 {
   float latitude, longitude, speed_kph, heading, altitude;
   bool gpsFix = fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude);
-
 
   lat = convertDegMinToDecDeg(latitude);
   lon = convertDegMinToDecDeg(longitude);
@@ -263,11 +260,12 @@ bool get_drone_location(float& lat, float& lon)
   Serial.print(lon);
 
   return gpsFix;
-  
 }
 
 //used to convert fona gps output to actual location coordinate in degrees
-float convertDegMinToDecDeg (float degMin) {
+float
+convertDegMinToDecDeg(float degMin)
+{
   double min = 0.0;
   double decDeg = 0.0;
  
@@ -281,9 +279,9 @@ float convertDegMinToDecDeg (float degMin) {
   return (float) decDeg;
 }
 
-
 //gets gps coordinates from server
-bool get_destination(float& lat, float &lon)
+bool
+get_destination(float& lat, float &lon)
 {
    // Prepare request
   uint16_t statuscode;
