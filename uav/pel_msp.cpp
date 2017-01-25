@@ -306,7 +306,7 @@ pel_msp_status(uint8_t *buf)
     i2c_errors_count = readuint16(buf + 2);
     sensor = readuint16(buf + 4);
     flag = readuint32(buf + 6);
-    global_conf_currentset = readuint8(buf + 10);
+    global_conf_currentset = buf[10];
 
     pel_log_debug("Status Recieved: ");
     pel_log_debug(cycle_time);
@@ -368,7 +368,7 @@ pel_msp_comp_gps(uint8_t *buf)
 
     distance_to_home = readuint16(buf);
     direction_to_home = readuint(buf + 2);
-    update = readuint8(buf + 4);
+    update = buf[4];
 
     pel_log_debug("Home GPS Recieved: ");
     pel_log_debug(distance_to_home);
