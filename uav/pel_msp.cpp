@@ -439,6 +439,7 @@ pel_msp_rc_tuning(uint8_t *buf)
 }
 
 
+#if 0
 //not certain of the next two functions
 void
 pel_msp_pid(uint8_t *buf)
@@ -476,6 +477,7 @@ pel_msp_box(uint8_t *buf, int box)
 
     pel_log_debug("\n");
 }
+#endif
 
 void
 pel_msp_misc(uint8_t *buf)
