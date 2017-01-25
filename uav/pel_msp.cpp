@@ -441,7 +441,7 @@ pel_msp_rc_tuning(uint8_t *buf)
 
 //not certain of the next two functions
 void
-pel_msp_pid(unit8_t *buf)
+pel_msp_pid(uint8_t *buf)
 {
     int i;
     uint8_t a[30];
@@ -478,7 +478,7 @@ pel_msp_box(uint8_t *buf, int box)
 }
 
 void
-pel_msp_misc(unit8_t *buf)
+pel_msp_misc(uint8_t *buf)
 {
     uint16_t power_trigger;
     uint16_t min_throttle;
