@@ -19,6 +19,8 @@
 #define AUX1_PIN        5
 #define AUX2_PIN        4
 
+#define URL             "https://example.com/location/"
+
 static uint8_t type;
 static char replybuffer[255];
 static int8_t armed;
@@ -294,31 +296,34 @@ convertDegMinToDecDeg(float degMin)
 static int8_t
 get_destination(float *lat, float *lon)
 {
-    // Prepare request
+    int i;
+    int tmplength;
+    char c;
+    uint16_t len;
     uint16_t statuscode;
-    int16_t len;
-    String domain = "ADD_DOMAIN_HERE";
-    String url = domain + "/location/";
-    char buf[80];
-    url.toCharArray(buf, 100);
+    char response[256];
+    StaticJsonBuffer<200> jsonBuffer;
     
     Serial.print("Request: ");
-    Serial.print(buf);
+    Serial.print(URL);
     
     // Get location
-    if (!fona.HTTP_GET_start(buf, &statuscode, (uint16_t *) &len)) {
+    if (!fona.HTTP_GET_start(URL, &statuscode, &len)) {
         Serial.println("Failed!");
-        return 0;
+        return -1;
     }
+
+    if (statuscode != 200)
+        return -1;
     
-    char response[255];
-    StaticJsonBuffer<200> jsonBuffer;
-    int i = 0;
-    int tmplength = len;
+    i = 0;
+    tmplength = len;
     
     while (len > 0) {  
-        while (fona.available()) {
-            char c = fona.read();
+        while (fona.available() > 0) {
+            c = fona.read();
+            if (c == -1)
+                continue;
             
             // Serial.write is too slow, we'll write directly to Serial register!
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
@@ -343,10 +348,10 @@ get_destination(float *lat, float *lon)
             *lat = root["lat"].as<float>();
             *lon = root["lon"].as<float>();
             
-            return 1;
+            return 0;
         }
     }
 
-    return 0;
+    return -1;
 }
 
