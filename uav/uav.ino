@@ -196,36 +196,36 @@ arm(void)
 static void
 disarm(void)
 {
-  if (armed)
-    apply_aux2(1200); //move out of range.
+    if (armed)
+        apply_aux2(1200); //move out of range.
 }
 
 static void
 apply_pitch(float value)
 {
-  pitchServo.writeMicroseconds(value);
-  // apply PWM for pitch
+    pitchServo.writeMicroseconds(value);
+    // apply PWM for pitch
 }
 
 static void
 apply_yaw(float value)
 {
-  yawServo.writeMicroseconds(value);
-  // apply PWM for yaw
+    yawServo.writeMicroseconds(value);
+    // apply PWM for yaw
 }
 
 static void
 apply_roll(float value)
 {
-  rollServo.writeMicroseconds(value);
-  // call MSP API to apply roll to drone
+    rollServo.writeMicroseconds(value);
+    // call MSP API to apply roll to drone
 }
 
 static void
 apply_throttle(float value)
 {
-  throttleServo.writeMicroseconds(value);
-  // call MSP API to apply throttle to drone
+    throttleServo.writeMicroseconds(value);
+    // call MSP API to apply throttle to drone
 }
 
 static void
