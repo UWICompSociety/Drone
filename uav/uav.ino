@@ -53,7 +53,7 @@ static void take_off(float height);
 static void check_height(void);
 static int8_t get_drone_location(float *lat, float *lon);
 static float convertDegMinToDecDeg(float degMin);
-static int8_t get_destination(float& lat, float &lon);
+static int8_t get_destination(float *lat, float *lon);
 
 void
 setup(void)
@@ -69,7 +69,7 @@ loop(void)
     
     get_drone_location(&origin_lat, &origin_lon);
     
-//    get_destination(dest_lat, dest_lon);
+//    get_destination(&dest_lat, &dest_lon);
     
 //    distance = calc_distance(origin_lat, origin_lon, dest_lat, dest_lon); /* distance to target */
     
@@ -292,7 +292,7 @@ convertDegMinToDecDeg(float degMin)
 
 //gets gps coordinates from server
 static int8_t
-get_destination(float& lat, float &lon)
+get_destination(float *lat, float *lon)
 {
     // Prepare request
     uint16_t statuscode;
@@ -340,8 +340,8 @@ get_destination(float& lat, float &lon)
         JsonObject& root = jsonBuffer.parseObject(response);
     
         if (root.success()) { 
-            lat = root["lat"].as<float>();
-            lon = root["lon"].as<float>();
+            *lat = root["lat"].as<float>();
+            *lon = root["lon"].as<float>();
             
             return 1;
         }
