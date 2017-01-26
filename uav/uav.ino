@@ -296,7 +296,7 @@ get_destination(float *lat, float *lon)
 {
     // Prepare request
     uint16_t statuscode;
-    int16_t length;
+    int16_t len;
     String domain = "ADD_DOMAIN_HERE";
     String url = domain + "/location/";
     char buf[80];
@@ -306,7 +306,7 @@ get_destination(float *lat, float *lon)
     Serial.print(buf);
     
     // Get location
-    if (!fona.HTTP_GET_start(buf, &statuscode, (uint16_t *) &length)) {
+    if (!fona.HTTP_GET_start(buf, &statuscode, (uint16_t *) &len)) {
         Serial.println("Failed!");
         return 0;
     }
@@ -314,9 +314,9 @@ get_destination(float *lat, float *lon)
     char response[255];
     StaticJsonBuffer<200> jsonBuffer;
     int i = 0;
-    int tmplength = length;
+    int tmplength = len;
     
-    while (length > 0) {  
+    while (len > 0) {  
         while (fona.available()) {
             char c = fona.read();
             
@@ -328,7 +328,7 @@ get_destination(float *lat, float *lon)
             response[i] = c;
             Serial.write(c);
 #endif
-            length--;
+            len--;
             i++;
         }
     }
