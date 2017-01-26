@@ -51,7 +51,7 @@ static void apply_aux1(int value);
 static void apply_aux2(int value);
 static void take_off(float height);
 static void check_height(void);
-static int8_t get_drone_location(float& lat, float& lon);
+static int8_t get_drone_location(float *lat, float *lon);
 static float convertDegMinToDecDeg(float degMin);
 static int8_t get_destination(float& lat, float &lon);
 
@@ -59,7 +59,7 @@ void
 setup(void)
 {
     setUpFona();
-    set_up_servos();
+//    set_up_servos();
 }
 
 void
@@ -67,13 +67,13 @@ loop(void)
 {
     float distance, bearing, origin_lon, origin_lat, dest_lat, dest_lon;
     
-    get_drone_location(origin_lat, origin_lon);
+    get_drone_location(&origin_lat, &origin_lon);
     
-    get_destination(dest_lat, dest_lon);
+//    get_destination(dest_lat, dest_lon);
     
-    distance = calc_distance(origin_lat, origin_lon, dest_lat, dest_lon); /* distance to target */
+//    distance = calc_distance(origin_lat, origin_lon, dest_lat, dest_lon); /* distance to target */
     
-    bearing = calc_bearing(origin_lat, origin_lon, dest_lat, dest_lon); /* heading to target */
+//    bearing = calc_bearing(origin_lat, origin_lon, dest_lat, dest_lon); /* heading to target */
     
     delay(60 * 1000);
 }
@@ -257,16 +257,18 @@ check_height(void)
 }
 
 static int8_t
-get_drone_location(float& lat, float& lon)
+get_drone_location(float *lat, float *lon)
 {
     float latitude, longitude, speed_kph, heading, altitude;
     bool gpsFix = fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude);
     
-    lat = convertDegMinToDecDeg(latitude);
-    lon = convertDegMinToDecDeg(longitude);
-    
-    Serial.print(lat);
-    Serial.print(lon);
+    *lat = convertDegMinToDecDeg(latitude);
+    *lon = convertDegMinToDecDeg(longitude);
+
+    Serial.print("Fix ");
+    Serial.println(gpsFix);
+    Serial.println(latitude);
+    Serial.println(longitude);
     
     return gpsFix ? 1 : 0;
 }
