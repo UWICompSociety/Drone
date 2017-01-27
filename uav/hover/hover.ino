@@ -1,4 +1,4 @@
-#if 0
+
 #include <Servo.h>
 
 int rollPin = 3, throttlePin = 6, pitchPin = 5, yawPin=9,auxPin1=10,auxPin2=11;
@@ -77,4 +77,4 @@ void loop() {
     count+=1;
   }
 }
-#endif
+

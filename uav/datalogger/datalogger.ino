@@ -1,4 +1,4 @@
-#if 0
+
 #include <stddef.h>
 
 #include "pel_log.h"
@@ -32,5 +32,5 @@ loop(void)
     (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
     (void) pel_msp_ident(buf);
 }
-#endif
+
 
