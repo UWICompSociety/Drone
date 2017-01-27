@@ -1,12 +1,14 @@
 #include <Servo.h>
 
-byte last_channel_1,last_channel_2,last_channel_3,last_channel_4,last_channel_5;
-int rollPin = 3, throttlePin = 6, pitchPin = 5, yawPin=9,auxPin1=11,auxPin2=12;
+byte last_channel_1,last_channel_2,last_channel_3,last_channel_4,last_channel_5,last_channel_6;
+int rollPin = 3, throttlePin = 6, pitchPin = 5, yawPin=9,auxPin1=4,auxPin2=2;
 Servo roll,throttle,pitch,yaw,aux1,aux2;
-int throttle_chan,yaw_chan,roll_chan,pitch_chan,aux_chan;
-unsigned long timer_1,timer_2,timer_3,timer_4,timer_5;
+int throttle_chan,yaw_chan,roll_chan,pitch_chan,aux1_chan,aux2_chan;
+unsigned long timer_1,timer_2,timer_3,timer_4,timer_5,timer_6;
 unsigned long current_time;
 int count=0;
+bool armed = false;
+bool manual = false;
 
 
 void setup() {
@@ -17,6 +19,7 @@ void setup() {
   PCMSK0 |= (1 << PCINT2);                                                  //Set PCINT2 (digital input 51)to trigger an interrupt on state change.
   PCMSK0 |= (1 << PCINT3);                                                  //Set PCINT3 (digital input 50)to trigger an interrupt on state change.
   PCMSK0 |= (1 << PCINT4);                                                  //Set PCINT4 (digital input 10)to trigger an interrupt on state change.
+  PCMSK0 |= (1 << PCINT5);                                                  //Set PCINT6(digital input 11)to trigger an interrupt on state change.
 
   pinMode(rollPin,OUTPUT);
   roll.attach(rollPin);
@@ -41,8 +44,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
- // delay(250);
-  //print_values();
+ 
+  print_values();
 
   //disarm();
   
@@ -51,36 +54,74 @@ void loop() {
   pitch.write(1500);
   yaw.write(1500);
 
-  if(count <1)
+  if(!armed && aux2_chan>=1200)
   {
     aux2.write(1000);
     aux1.write(1000);
     throttle.write(885);
+    delay(250);
+    arm();
   }else{
-    throttle.write(throttle_chan);
-    yaw.write(yaw_chan);
-    roll.write(roll_chan);
-    pitch.write(pitch_chan);
-   
+
+    if(manual)
+    {
+      throttle.write(throttle_chan);
+      yaw.write(yaw_chan);
+      roll.write(roll_chan);
+      pitch.write(pitch_chan);
+    }else{
+      throttle.write(1600);
+      
+    }
+    
+  }
+
+ if(armed && aux2_chan <= 1200)
+  {
+    disarm();
   }
   
-  delay(1050);
-  
-  if(count <1)//arming step
+ /* if(!armed)//arming step
   {
     //aux1.write(1600);
-    aux2.write(1800);//moves from out of range to into range
-    aux1.write(1400);
-    delay(3000);
-    count+=1;
+    arm();
+    
+  }*/
+
+  
+  if(aux1_chan<=1500)
+  {
+    manual = true;
+  }else{
+    manual = false;
   }
+
+  /*if(aux_chan<=1200 && armed)
+  {
+    disarm();
+  }*/
+
+  
+  
+  //delay(100);
+  
+  
 
    
 }
+
+void arm()
+{
+  aux2.write(1800);//moves from out of range to into range
+  aux1.write(1400);
+  delay(3000);
+  armed = true;
+}
 void disarm()
 {
-  delay(1050);
-  aux2.write(1200);
+  //delay(1050);
+  aux1.write(1200);
+  armed = false;
 }
 
 void print_values()
@@ -97,8 +138,11 @@ void print_values()
   Serial.print("Pitch:");
   Serial.print(pitch_chan);
 
-  Serial.print("Aux:");
-  Serial.println(aux_chan);
+  Serial.print("Aux1:");
+  Serial.print(aux1_chan);
+
+  Serial.print("Aux2:");
+  Serial.println(aux2_chan);
 
   
 }
@@ -160,6 +204,18 @@ ISR(PCINT0_vect){
   }
   else if(last_channel_5 == 1){                                             //Input 11 is not high and changed from 1 to 0.
     last_channel_5 = 0;                                                     //Remember current input state.
-    aux_chan = current_time - timer_5;                             //Channel 4 is current_time - timer_4.
+    aux1_chan = current_time - timer_5;                             //Channel 4 is current_time - timer_4.
+  }
+
+   //Channel 6=========================================
+  if(PINB & B00100000 ){                                                    //Is input 11 high?
+    if(last_channel_6 == 0){                                                //Input 11 changed from 0 to 1.
+      last_channel_6 = 1;                                                   //Remember current input state.
+      timer_6 = current_time;                                               //Set timer_4 to current_time.
+    }
+  }
+  else if(last_channel_6 == 1){                                             //Input 11 is not high and changed from 1 to 0.
+    last_channel_6 = 0;                                                     //Remember current input state.
+    aux2_chan = current_time - timer_6;                             //Channel 4 is current_time - timer_4.
   }
 }
