@@ -143,23 +143,27 @@ pel_msp_recv(uint8_t *buf, size_t n)
 }
 
 void
-pel_msp_attitude(uint8_t *buf)
+pel_msp_attitude(uint8_t *buf,Attitude* attiude)
 {
     int16_t angx = readint16(buf);
     int16_t angy = readint16(buf + sizeof (int16_t));
     int16_t heading = readint16(buf + 2 * sizeof (int16_t));
 
-    pel_log_debug("Attitude Recieved: ");
+    attiude->angx = angx;
+    attiude->angy = angy;
+    attiude->heading = heading;
+
+    /*pel_log_debug("Attitude Recieved: ");
     pel_log_debug(angx);
     pel_log_debug(", ");
     pel_log_debug(angy);
     pel_log_debug(", ");
     pel_log_debug(heading);
-    pel_log_debug("\n");
+    pel_log_debug("\n");*/
 }
 
 void
-pel_msp_raw_imu(uint8_t *buf)
+pel_msp_raw_imu(uint8_t *buf,IMUValues* imuValues)
 {
     int16_t accx;
     int16_t accy;
@@ -181,7 +185,17 @@ pel_msp_raw_imu(uint8_t *buf)
     magy = readint16(buf + 14);
     magz = readint16(buf + 16);
 
-    pel_log_debug("Raw GPS Recieved: ");
+    imuValues->accx = accx;
+    imuValues->accy = accy;
+    imuValues->accz = accz;
+    imuValues->gyrx = gyrx;
+    imuValues->gyry = gyry;
+    imuValues->gyrz = gyrz;
+    imuValues->magx = magx;
+    imuValues->magy = magy;
+    imuValues->magz = magz;
+
+   /* pel_log_debug("Raw GPS Recieved: ");
     pel_log_debug(accx);
     pel_log_debug(", ");
     pel_log_debug(accy);
@@ -199,7 +213,7 @@ pel_msp_raw_imu(uint8_t *buf)
     pel_log_debug(magy);
     pel_log_debug(", ");
     pel_log_debug(magz);
-    pel_log_debug("\n");
+    pel_log_debug("\n");*/
 }
 
 void
@@ -239,13 +253,16 @@ pel_msp_raw_gps(uint8_t *buf)
 }
 
 void
-pel_msp_altitude(uint8_t *buf)
+pel_msp_altitude(uint8_t *buf, Altitude* altitude)
 {
     int32_t est_alt;
     int16_t vario;
 
     est_alt = readint16(buf);
     vario = readint16(buf + sizeof (int32_t));
+
+    altitude->est_alt = est_alt;
+    altitude->vario = vario;
 
     pel_log_debug("Altitude Recieved: ");
     pel_log_debug(est_alt);

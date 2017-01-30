@@ -19,7 +19,7 @@
 #define AUX1_PIN        5
 #define AUX2_PIN        4
 
-#define URL             "https://example.com/location/"
+#define URL             "http://stonegod21.pythonanywhere.com/location/"
 
 static uint8_t type;
 static char replybuffer[255];
@@ -67,17 +67,28 @@ setup(void)
 void
 loop(void)
 {
+    Serial.print("Getting a fix");
+    delay(5000);
     float distance, bearing, origin_lon, origin_lat, dest_lat, dest_lon;
     
     get_drone_location(&origin_lat, &origin_lon);
     
-//    get_destination(&dest_lat, &dest_lon);
+    //get_destination(&dest_lat, &dest_lon);
+   
+    dest_lat=18.005872;
+    dest_lon=-76.747358;
     
-//    distance = calc_distance(origin_lat, origin_lon, dest_lat, dest_lon); /* distance to target */
+    distance = calc_distance(origin_lat, origin_lon, dest_lat, dest_lon); /* distance to target */
+    Serial.print("Distance to Target");
+    Serial.println(distance);
     
-//    bearing = calc_bearing(origin_lat, origin_lon, dest_lat, dest_lon); /* heading to target */
+    bearing = calc_bearing(origin_lat, origin_lon, dest_lat, dest_lon); /* heading to target */
+    Serial.print("Bearing to Target");
+    Serial.println(bearing); 
+
+   
     
-    delay(60 * 1000);
+    //delay(5000);
 }
 
 static void
@@ -128,9 +139,11 @@ setUpFona(void)
     delay(10000);
     Serial.println("delay stop");
     
-    Serial.println("enabling GPRS");
-    while (!fona.enableGPRS(true));
-    Serial.println("GPRS enabled");
+    //Serial.println("enabling GPRS");
+    //while (!fona.enableGPRS(true));
+    //sSerial.println("GPRS enabled");
+
+    
 }
 
 static float
@@ -264,13 +277,16 @@ get_drone_location(float *lat, float *lon)
     float latitude, longitude, speed_kph, heading, altitude;
     bool gpsFix = fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude);
     
-    *lat = convertDegMinToDecDeg(latitude);
-    *lon = convertDegMinToDecDeg(longitude);
+    *lat = latitude;
+    *lon = longitude;
 
     Serial.print("Fix ");
     Serial.println(gpsFix);
     Serial.println(latitude);
     Serial.println(longitude);
+    Serial.println(heading);
+    Serial.println(altitude);
+    Serial.println(speed_kph);
     
     return gpsFix ? 1 : 0;
 }

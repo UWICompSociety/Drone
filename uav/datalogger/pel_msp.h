@@ -55,6 +55,7 @@
  * The argument m points to a buffer.  The buffer's contents will not be modified.
  * The argument is surrounded in parentheses because of pointer arithmetic.
  * These also do not perform array bounds checking.
+ * 
  */
 #define readint16(m)  (int16_t) ((m)[1] << 8 | (m)[0])
 #define readuint16(m)           ((m)[1] << 8 | (m)[0])
@@ -64,10 +65,53 @@
 extern size_t pel_msp_send(uint8_t opcode, const uint8_t *data, size_t n);
 extern size_t pel_msp_recv(uint8_t *buf, size_t n);
 
-extern void pel_msp_attitude(uint8_t *buf);
+struct Attitude{
+  
+  int16_t angx;
+    int16_t angy;
+    int16_t heading;
+
+    int16_t getAngX()
+    {
+      return angx;
+    }
+
+    int16_t getAngY()
+    {
+      return angy;
+    }
+
+    int16_t getHeading()
+    {
+      return heading;
+    }
+
+};
+
+
+struct IMUValues{
+
+  int16_t accx;
+    int16_t accy;
+    int16_t accz;
+    int16_t gyrx;
+    int16_t gyry;
+    int16_t gyrz;
+    int16_t magx;
+    int16_t magy;
+    int16_t magz;
+};
+
+
+struct Altitude{
+  int32_t est_alt;
+    int16_t vario;
+};
+
+extern void pel_msp_attitude(uint8_t *buf,Attitude* attitude);
 extern void pel_msp_raw_gps(uint8_t *buf);
-extern void pel_msp_raw_imu(uint8_t *buf);
-extern void pel_msp_altitude(uint8_t *buf);
+extern void pel_msp_raw_imu(uint8_t *buf, IMUValues* imuValues);
+extern void pel_msp_altitude(uint8_t *buf, Altitude* altitude);
 extern void pel_msp_rc(uint8_t *buf);
 extern void pel_msp_ident(uint8_t *buf);
 extern void pel_msp_status(uint8_t *buf);
@@ -82,6 +126,9 @@ extern void pel_msp_misc(uint8_t *buf);
 extern void pel_msp_motor_pins(uint8_t *buf);
 extern void pel_msp_wp(uint8_t *buf);
 extern void pel_msp_select_settings(uint8_t *buf);
+
+
+
 
 #endif /* PEL_PROTOCOL_H */
 

@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 byte last_channel_1,last_channel_2,last_channel_3,last_channel_4,last_channel_5,last_channel_6;
-int rollPin = 3, throttlePin = 6, pitchPin = 5, yawPin=9,auxPin1=4,auxPin2=2;
+int rollPin = 2, throttlePin = 4, pitchPin = 3, yawPin=5,auxPin1=6,auxPin2=7;
 Servo roll,throttle,pitch,yaw,aux1,aux2;
 int throttle_chan,yaw_chan,roll_chan,pitch_chan,aux1_chan,aux2_chan;
 unsigned long timer_1,timer_2,timer_3,timer_4,timer_5,timer_6;
@@ -9,7 +9,16 @@ unsigned long current_time;
 int count=0;
 bool armed = false;
 bool manual = false;
-
+int prev_time;
+int startPitch = 1500;
+bool switch_foward = false;
+bool switch_land = false;
+bool switch_takeoff = false;
+int current_throttle=1000;
+int throttle_counter=0;
+bool goforward=false;
+int forward_timer = 0;
+bool stop_now=false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -44,12 +53,11 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+
  
-  print_values();
-
-  //disarm();
   
-
+  print_values();
+  
   roll.write(1500);
   pitch.write(1500);
   yaw.write(1500);
@@ -59,7 +67,7 @@ void loop() {
     aux2.write(1000);
     aux1.write(1000);
     throttle.write(885);
-    delay(250);
+    //delay(250);
     arm();
   }else{
 
@@ -70,24 +78,43 @@ void loop() {
       roll.write(roll_chan);
       pitch.write(pitch_chan);
     }else{
-      throttle.write(1600);
-      
+        throttle.write(current_throttle);
+        if(millis()-prev_time>=500 && !goforward)
+        {
+          prev_time=millis();
+          current_throttle+=520;
+          if(current_throttle>=1600)
+          {
+            forward_timer = millis();
+            current_throttle = 1600;
+            goforward = true;
+            
+          }
+        }
+        if(goforward && !stop_now)
+        {
+          pitch.write(1550);
+          if(millis()-forward_timer>=3000)
+          {
+            pitch.write(1500);
+            stop_now = true;
+          }
+        }
+
+//        if(stop_now)
+//        {
+//          
+//        }
+        
+        
     }
     
   }
 
- if(armed && aux2_chan <= 1200)
+  if(armed && aux2_chan <= 1200)
   {
     disarm();
   }
-  
- /* if(!armed)//arming step
-  {
-    //aux1.write(1600);
-    arm();
-    
-  }*/
-
   
   if(aux1_chan<=1500)
   {
@@ -96,31 +123,127 @@ void loop() {
     manual = false;
   }
 
-  /*if(aux_chan<=1200 && armed)
+  
+}
+
+void auto_pilot()
+{
+  take_off(4,1600,400);
+}
+void take_off(int seconds,int desired_throttle,int rate)
+{
+  int increment = (desired_throttle-1000)/((seconds*1000)/rate);
+  //Serial.println(increment);
+  //if(!switch_takeoff)
+ // {
+    throttle.write(current_throttle);
+    if(millis()-prev_time>=rate)
+    {
+      current_throttle+=increment;
+      //pitch.write(startPitch);
+      prev_time = millis();
+      Serial.print("Increasing throttle");
+      Serial.println(current_throttle);
+      //throttle.write(current_throttle);
+    }
+
+    /*if(current_throttle>=desired_throttle)
+    {
+      switch_takeoff = true;
+      prev_time=0;
+      Serial.println("In air");
+      Serial.println("Going Foward");
+      
+    }*/
+ // }
+  
+ /* if(switch_takeoff)
   {
-    disarm();
+   //pitch.write(1500);
+     go_forward(5,1800,400);
   }*/
+}
 
-  
-  
-  //delay(100);
-  
-  
 
-   
+
+void go_forward(int seconds,int desired_pitch,int rate)
+{
+  int increment = (desired_pitch-1500)/((seconds*1000)/rate);
+  //Serial.println(increment);
+  if(!switch_foward)
+  {
+    
+    if(millis()-prev_time>=rate)
+    {
+      startPitch+=increment;
+      //pitch.write(startPitch);
+      prev_time = millis();
+      Serial.print("Increasing pitch");
+      Serial.println(startPitch);
+      pitch.write(startPitch);
+    }
+
+    if(startPitch>=desired_pitch)
+    {
+      switch_foward = true;
+      prev_time=0;
+      Serial.println("Initiating landing sequence");
+    }
+  }
+  
+  if(switch_foward)
+  {
+   //pitch.write(1500);
+    
+    land(6,1000,400);
+  }
+}
+
+void land(int seconds,int desired_throttle,int rate)
+{
+  int increment = (1600-desired_throttle)/((seconds*1000)/rate);
+  //Serial.println(increment);
+  if(!switch_land)
+  {
+    
+    if(millis()-prev_time>=rate)
+    {
+      
+      //pitch.write(startPitch);
+      current_throttle-=increment;
+      prev_time = millis();
+      Serial.print("Decreasing throttle");
+      Serial.println(current_throttle);
+      //throttle.write(current_throttle);
+    }
+
+    if(current_throttle<=desired_throttle)
+    {
+      switch_land = true;
+      Serial.println("Landed");
+    }
+  }
+  
+  /*if(switch_foward)
+  {
+   //pitch.write(1500);
+    
+    land();
+  }*/
 }
 
 void arm()
 {
   aux2.write(1800);//moves from out of range to into range
   aux1.write(1400);
-  delay(3000);
+  //delay(3000);
   armed = true;
 }
 void disarm()
 {
   //delay(1050);
-  aux1.write(1200);
+  aux2.write(1200);
+  current_throttle = 1000;
   armed = false;
 }
 
@@ -158,7 +281,7 @@ ISR(PCINT0_vect){
   }
   else if(last_channel_1 == 1){                                             //Input 8 is not high and changed from 1 to 0.
     last_channel_1 = 0;                                                     //Remember current input state.
-    throttle_chan = current_time - timer_1;                             //Channel 1 is current_time - timer_1.
+    roll_chan = current_time - timer_1;                             //Channel 1 is current_time - timer_1.
   }
   //Channel 2=========================================
   if(PINB & B00000010 ){                                                    //Is input 9 high?
@@ -169,7 +292,7 @@ ISR(PCINT0_vect){
   }
   else if(last_channel_2 == 1){                                             //Input 9 is not high and changed from 1 to 0.
     last_channel_2 = 0;                                                     //Remember current input state.
-    yaw_chan = current_time - timer_2;                             //Channel 2 is current_time - timer_2.
+    throttle_chan = current_time - timer_2;                             //Channel 2 is current_time - timer_2.
   }
   //Channel 3=========================================
   if(PINB & B00000100 ){                                                    //Is input 10 high?
@@ -180,7 +303,7 @@ ISR(PCINT0_vect){
   }
   else if(last_channel_3 == 1){                                             //Input 10 is not high and changed from 1 to 0.
     last_channel_3 = 0;                                                     //Remember current input state.
-    roll_chan = current_time - timer_3;                             //Channel 3 is current_time - timer_3.
+    pitch_chan = current_time - timer_3;                             //Channel 3 is current_time - timer_3.
 
   }
   //Channel 4=========================================
@@ -192,7 +315,7 @@ ISR(PCINT0_vect){
   }
   else if(last_channel_4 == 1){                                             //Input 11 is not high and changed from 1 to 0.
     last_channel_4 = 0;                                                     //Remember current input state.
-    pitch_chan = current_time - timer_4;                             //Channel 4 is current_time - timer_4.
+    yaw_chan = current_time - timer_4;                             //Channel 4 is current_time - timer_4.
   }
 
    //Channel 5=========================================
