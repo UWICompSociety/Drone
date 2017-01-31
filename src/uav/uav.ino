@@ -4,6 +4,7 @@
 #include <Servo.h>
 #include <SoftwareSerial.h>
 
+#include "pel_log.h"
 /* #include "DHT.h" */
 #include "Adafruit_FONA.h"
 #include "ArduinoJson.h"
@@ -67,7 +68,7 @@ setup(void)
 void
 loop(void)
 {
-    Serial.print("Getting a fix");
+    pel_log_debug("Getting a fix\n");
     delay(5000);
     float distance, bearing, origin_lon, origin_lat, dest_lat, dest_lon;
     
@@ -79,14 +80,14 @@ loop(void)
     dest_lon=-76.747358;
     
     distance = calc_distance(origin_lat, origin_lon, dest_lat, dest_lon); /* distance to target */
-    Serial.print("Distance to Target");
-    Serial.println(distance);
+    pel_log_debug("Distance to Target: ");
+    pel_log_debug(distance);
+    pel_log_debug("\n");
     
     bearing = calc_bearing(origin_lat, origin_lon, dest_lat, dest_lon); /* heading to target */
-    Serial.print("Bearing to Target");
-    Serial.println(bearing); 
-
-   
+    pel_log_debug("Bearing to Target: ");
+    pel_log_debug(bearing);
+    pel_log_debug("\n");
     
     //delay(5000);
 }
@@ -116,32 +117,34 @@ set_up_servos(void)
 static void
 setUpFona(void)
 {
+#ifndef NDEBUG
     while (!Serial);
     Serial.begin(9600);
+#endif
 
-    Serial.println(F("FONA reading SMS"));
-    Serial.println(F("Initializing....(May take 3 seconds)"));
+    pel_log_debug(F("FONA reading SMS\n"));
+    pel_log_debug(F("Initializing....(May take 3 seconds)\n"));
     
     fonaSerial->begin(9600);
     if (!fona.begin(*fonaSerial)) {
-        Serial.println(F("Couldn't find FONA"));
+        pel_log_debug(F("Couldn't find FONA\n"));
         while (1);
     }
     type = fona.type();
     delay(4000);
     
-    Serial.println("enabling GPS");
+    pel_log_debug("enabling GPS\n");
     while (!fona.enableGPS(true));
-    Serial.println("GPS enabled");
+    pel_log_debug("GPS enabled\n");
     
     fona.setGPRSNetworkSettings(F("ppinternet"));
-    Serial.println("delay start");
+    pel_log_debug("delay start\n");
     delay(10000);
-    Serial.println("delay stop");
+    pel_log_debug("delay stop\n");
     
-    //Serial.println("enabling GPRS");
+    //pel_log_debug("enabling GPRS\n");
     //while (!fona.enableGPRS(true));
-    //sSerial.println("GPRS enabled");
+    //pel_log_debug("GPRS enabled\n");
 
     
 }
@@ -280,13 +283,29 @@ get_drone_location(float *lat, float *lon)
     *lat = latitude;
     *lon = longitude;
 
-    Serial.print("Fix ");
-    Serial.println(gpsFix);
-    Serial.println(latitude);
-    Serial.println(longitude);
-    Serial.println(heading);
-    Serial.println(altitude);
-    Serial.println(speed_kph);
+    pel_log_debug("Fix: ");
+    pel_log_debug(gpsFix);
+    pel_log_debug("\n");
+
+    pel_log_debug("Lat: ");
+    pel_log_debug(latitude);
+    pel_log_debug("\n");
+
+    pel_log_debug("Lng: ");
+    pel_log_debug(longitude);
+    pel_log_debug("\n");
+    
+    pel_log_debug("Heading: ");
+    pel_log_debug(heading);
+    pel_log_debug("\n");
+
+    pel_log_debug("Altitude: ");
+    pel_log_debug(altitude);
+    pel_log_debug("\n");
+    
+    pel_log_debug("Speed KPH: ");
+    pel_log_debug(speed_kph);
+    pel_log_debug("\n");
     
     return gpsFix ? 1 : 0;
 }
@@ -320,12 +339,9 @@ get_destination(float *lat, float *lon)
     char response[256];
     StaticJsonBuffer<200> jsonBuffer;
     
-    Serial.print("Request: ");
-    Serial.print(URL);
-    
     // Get location
     if (!fona.HTTP_GET_start(URL, &statuscode, &len)) {
-        Serial.println("Failed!");
+        pel_log_debug("Failed!\n");
         return -1;
     }
 
@@ -347,7 +363,7 @@ get_destination(float *lat, float *lon)
             UDR0 = c;
 #else
             response[i] = c;
-            Serial.write(c);
+            pel_log_debug(c);
 #endif
             len--;
             i++;
