@@ -15,11 +15,21 @@ bool switch_foward = false;
 bool switch_land = false;
 bool switch_takeoff = false;
 int current_throttle=1000;
+int current_pitch=1500;
+int current_roll=1500;
+int current_yaw=1500;
 int throttle_counter=0;
 bool goforward=false;
 int forward_timer = 0;
 bool stop_now=false;
-
+int hover_timer = 0;
+bool hover=false;
+bool stop_hover=false;
+bool back_timer=0;
+bool go_back=false;
+bool stay_hover=false;
+bool new_hover=false;
+int stay_timer=0;
 void setup() {
   // put your setup code here, to run once:
   PCICR |= (1 << PCIE0);                                                    //Set PCIE0 to enable PCMSK0 scan.
@@ -57,17 +67,11 @@ void loop() {
  
   
   print_values();
-  
-  roll.write(1500);
-  pitch.write(1500);
-  yaw.write(1500);
-
   if(!armed && aux2_chan>=1200)
   {
     aux2.write(1000);
     aux1.write(1000);
     throttle.write(885);
-    //delay(250);
     arm();
   }else{
 
@@ -79,35 +83,79 @@ void loop() {
       pitch.write(pitch_chan);
     }else{
         throttle.write(current_throttle);
-        if(millis()-prev_time>=500 && !goforward)
+        pitch.write(current_pitch);
+        yaw.write(current_yaw);
+        roll.write(current_roll);
+        
+        if(millis()-prev_time>=825 && !stay_hover)
         {
           prev_time=millis();
-          current_throttle+=520;
-          if(current_throttle>=1600)
+          current_throttle+=110;
+          if(current_throttle>=1630)
           {
-            forward_timer = millis();
-            current_throttle = 1600;
-            goforward = true;
+            
+            stay_timer=millis();
+            current_throttle = 1630;
+            stay_hover=true;
+            new_hover=true;
+            prev_time=0;
             
           }
         }
-        if(goforward && !stop_now)
+
+        if(millis-stay_timer>=1000 && new_hover)
         {
-          pitch.write(1550);
-          if(millis()-forward_timer>=3000)
+            //current_throttle=1600;
+            //stay_hover = false;
+            new_hover=false;
+            goforward = true;
+            forward_timer = millis();
+        }
+
+        
+        
+        if(goforward && !hover)
+        {
+          current_pitch=1550;
+          
+          if(millis()-forward_timer>=5000)
           {
-            pitch.write(1500);
-            stop_now = true;
+            current_pitch=1480;
+            hover = true;
+            back_timer=millis();
+            go_back=true;
           }
         }
 
-//        if(stop_now)
-//        {
-//          
-//        }
+        if(millis()-back_timer>=500 && go_back)
+        {
+            current_pitch=1500;
+            stop_hover=true;
+            hover_timer=millis();
+            go_back=false;
+        }
+
+        if(millis()-hover_timer>=2000 && stop_hover)
+        {
+            stop_now=true;
+            stop_hover=false;
+        }
         
         
-    }
+        if(stop_now)
+        {
+          if(millis()-prev_time>=750)
+          {
+            prev_time=millis();
+            current_throttle-=40;
+            if(current_throttle<=1000)
+            {
+              current_throttle=1000;
+              stop_now=false;
+            }
+          }
+        }
+     }
     
   }
 
@@ -115,12 +163,21 @@ void loop() {
   {
     disarm();
   }
+
   
-  if(aux1_chan<=1500)
+  if(aux1_chan<=1200)
   {
     manual = true;
-  }else{
+  }else if(aux1_chan>=1700){
     manual = false;
+  }
+
+  if(aux1_chan>=1490 && aux1_chan<=1520)
+  {
+    //Serial.println("Hello");
+    aux1.write(aux1_chan);
+  }else{
+    aux1.write(aux1_chan);
   }
 
   
@@ -236,12 +293,10 @@ void arm()
 {
   aux2.write(1800);//moves from out of range to into range
   aux1.write(1400);
-  //delay(3000);
   armed = true;
 }
 void disarm()
 {
-  //delay(1050);
   aux2.write(1200);
   current_throttle = 1000;
   armed = false;
