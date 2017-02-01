@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #include <Servo.h>
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
 
 /* #include "DHT.h" */
 #include "Adafruit_FONA.h"
@@ -32,6 +32,30 @@ byte last_channel_4;
 byte last_channel_5;
 byte last_channel_6;
 
+#define STATE_HOVER 1
+#define STATE_TAKEOFF 2
+#define STATE_MOVEFORWARD 3
+#define STATE_LANDING 4
+#define STATE_DONE 5
+
+#define MAX_THROTTLE 1600
+#define MIN_THROTTLE 1000
+#define FORWARD_PITCH 1540
+#define BACKWARD_PITCH 1460
+#define DEFAULT_PITCH 1500
+#define DEFAULT_ROLL 1500
+#define DEFAULT_YAW 1500
+#define LEFT_ROLL 1460
+#define RIGHT_ROLL 1540
+#define LEFT_TURN 1460
+#define RIGHT_TURN 1540
+
+
+int states[] = {STATE_TAKEOFF,STATE_HOVER,STATE_MOVEFORWARD,STATE_HOVER,STATE_LANDING,STATE_DONE }; //flight sequence
+
+int current_state;
+int stateCounter=0;
+
 unsigned long timer_1;
 unsigned long timer_2;
 unsigned long timer_3;
@@ -49,9 +73,8 @@ int current_pitch=1500;
 int current_roll=1500;
 int current_yaw=1500;
 
-bool goforward=false;
-int forward_timer = 0;
-bool stop_now=false;
+
+int next_state_timer=0;
 
 int throttle_chan;
 int yaw_chan;
@@ -68,8 +91,8 @@ float drone_lat;
 float drone_lon;
 bool gpsFix;
 
-static SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
-static SoftwareSerial *fonaSerial = &fonaSS;
+//static SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
+//static SoftwareSerial *fonaSerial = &fonaSS;
 
 static Servo pitchServo;
 static Servo yawServo;
@@ -78,7 +101,7 @@ static Servo throttleServo;
 static Servo aux1Servo;
 static Servo aux2Servo;
 
-static Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
+//static Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
 
 static void set_up_servos(void);
 static void setUpFona(void);
@@ -100,11 +123,17 @@ static float convertDegMinToDecDeg(float degMin);
 static int8_t get_destination(float *lat, float *lon);
 static float calc_distance_and_bearing(float,float,float,float,float*,float*);
 static void  print_reciever_values();
+static void auto_pilot();
+static void take_off(int increment_time,int increment_amount);
+static void hover(int hover_time);
+static void move_forward(int move_time);
+static void land(int increment_time,int increment_amount);
+static void switch_state();
 
 void
 setup(void)
 {
-    setUpFona();
+  //  setUpFona();
     set_up_servos();
     Serial.begin(9600);
     // put your setup code here, to run once:
@@ -122,18 +151,18 @@ setup(void)
 void
 loop(void)
 {
-    Serial.print("Getting a fix");
-    delay(5000);
-    
-    get_drone_location(&drone_lat, &drone_lon);
-    get_destination(&dest_lat, &dest_lon);
-   
-    dest_lat=18.005872;
-    dest_lon=-76.747358;
-    
-    calc_distance_and_bearing(drone_lat, drone_lon, dest_lat, dest_lon,&target_distance,&target_bearing); /* distance to target */
+//    Serial.print("Getting a fix");
+//    delay(5000);
+//    
+//    get_drone_location(&drone_lat, &drone_lon);
+//    get_destination(&dest_lat, &dest_lon);
+//   
+//    dest_lat=18.005872;
+//    dest_lon=-76.747358;
+//    
+//    calc_distance_and_bearing(drone_lat, drone_lon, dest_lat, dest_lon,&target_distance,&target_bearing); /* distance to target */
 
-    print_reciever_values();
+    //print_reciever_values();
     
     if(!armed && aux2_chan>=1200) //if drone is not armed and aux2 is set to 2000
     {
@@ -154,46 +183,10 @@ loop(void)
             apply_pitch(current_pitch);
             apply_yaw(current_yaw);
             apply_roll(current_roll);
-            
-            if(millis()-prev_time>=500 && !goforward) //throttle is increased every 500 milliseconds
-            {
-              prev_time=millis();
-              current_throttle+=200;
-              if(current_throttle>=1600)
-              {
-                forward_timer = millis();
-                current_throttle = 1600;
-                goforward = true;   //stop increasing throttle and start going forward
-                prev_time=0;
-                
-              }
-            }
-            
-            if(goforward && !stop_now)
-            {
-              current_pitch=1550; //set pitch to go forward
-              if(millis()-forward_timer>=3000) //go forward for 3 seconds
-              {
-                current_pitch=1500;
-                stop_now = true; //stop going forward and initiate land sequence
-              }
-            }
-            
-            
-            if(stop_now)
-            {
-              if(millis()-prev_time>=1000) //every second decrease throttle
-              {
-                prev_time=millis();
-                current_throttle-=100;
-                if(current_throttle<=1000)
-                {
-                  current_throttle=1000;
-                  stop_now=false;
-                }
-              }
-            }
-         }
+
+            auto_pilot();
+
+        }
         
       }
     
@@ -217,8 +210,178 @@ loop(void)
         apply_aux1(aux1_chan);
       }
 
+   // auto_pilot();
+//    Serial.print("Throttle ");
+//    Serial.println(current_throttle);
+//    Serial.print("Roll ");
+//    Serial.println(current_roll);
+//    Serial.print("Yaw ");
+//    Serial.println(current_yaw);
+//    Serial.print("Pitch ");
+//    Serial.println(current_pitch);
+    
+    
+
    
 }
+
+static void 
+auto_pilot()
+{
+    current_state=states[stateCounter];
+    //Serial.println(current_state);
+    //simple state machine, switches state based on variable current state
+    switch(current_state) 
+    {
+        case STATE_TAKEOFF:
+            take_off(500,200);
+            break;
+        case STATE_HOVER:
+            hover(1000);
+            break;
+        case STATE_MOVEFORWARD:
+            move_forward(7000);
+            break;
+        case STATE_LANDING:
+            land(1000,100);
+            break;
+        case STATE_DONE: //must be last state
+            break;
+    }
+}
+
+static void
+take_off(int increment_time,int increment_amount)
+{
+   if(millis()-prev_time>=increment_time) //throttle is increased every defined milliseconds
+   {
+      //  Serial.println("Taking off");
+        prev_time=millis();
+        current_throttle+=increment_amount;
+        if(current_throttle>=MAX_THROTTLE)
+        {
+
+            current_throttle = MAX_THROTTLE;
+            prev_time=0;
+            next_state_timer = millis(); //next state timer needs to be reset each time so other state cane use it
+            switch_state(); //swithces to the next state in the flight sequence
+         }
+    }
+}
+
+static void
+hover(int hover_time)
+{
+    //Serial.println("Hovering");
+    if(millis()-next_state_timer>=hover_time) //this mode just keeps throttle high with out modifying position
+    {
+        next_state_timer=millis();
+        switch_state();
+    }
+
+}
+
+static void 
+move_forward(int move_time)
+{
+    //Serial.println("Going forward");
+    current_pitch=FORWARD_PITCH; //apply forward pitch
+    if(millis()-next_state_timer>=move_time) //after some time stop applying pitch and transition
+    {
+        current_pitch=DEFAULT_PITCH;
+        next_state_timer=millis();
+        switch_state();
+    }
+}
+
+static void
+land(int increment_time,int increment_amount)
+{
+    //Serial.println("Landing");
+    if(millis()-prev_time>=increment_time) //every second decrease throttle
+    {
+        prev_time=millis();
+        current_throttle-=increment_amount;
+        if(current_throttle<=MIN_THROTTLE)
+        {
+            next_state_timer=millis();
+            current_throttle=MIN_THROTTLE;
+            switch_state();
+        }
+    }
+
+}
+
+static void
+move_back(int back_time)
+{
+    current_pitch=BACKWARD_PITCH;
+    if(millis()-next_state_timer>=back_time)
+    {
+        next_state_timer=millis();
+        current_pitch=DEFAULT_PITCH;
+        switch_state();
+    }
+}
+
+static void
+bank_right(int bank_time)
+{
+    current_roll= RIGHT_ROLL;
+    if(millis()-next_state_timer>=bank_time)
+    {
+        next_state_timer = millis();
+        current_roll=DEFAULT_ROLL;
+        switch_state();
+    }
+}
+
+static void 
+bank_left(int bank_time)
+{
+    current_roll=LEFT_ROLL;
+    if(millis()-next_state_timer>=bank_time)
+    {
+        next_state_timer=millis();
+        current_roll = DEFAULT_ROLL;
+        switch_state();
+    }
+}
+
+static void
+turn_left(int turn_time)
+{
+    current_yaw = LEFT_TURN;
+    if(millis()-next_state_timer>=turn_time)
+    {
+        next_state_timer=millis();
+        current_yaw = DEFAULT_YAW;
+        switch_state();
+    }
+}
+
+static void
+turn_right(int turn_time)
+{
+    current_yaw = RIGHT_TURN;
+    if(millis() - next_state_timer >=turn_time)
+    {
+        next_state_timer = millis();
+        current_yaw = DEFAULT_YAW;
+        switch_state();
+    }
+}
+
+
+static void 
+switch_state()
+{
+    stateCounter+=1;
+    current_state = states[stateCounter];
+}
+
+
+
 
 static void
 set_up_servos(void)
@@ -242,7 +405,7 @@ set_up_servos(void)
     aux2Servo.attach(AUX2_PIN);
 }
 
-static void
+/*static void
 setUpFona(void)
 {
     while (!Serial);
@@ -273,7 +436,7 @@ setUpFona(void)
     Serial.println("GPRS enabled");
 
     
-}
+}*/
 
 static float
 calc_distance_and_bearing(float lat1, float lon1, float lat2, float lon2,float* distance,float*bearing)
@@ -380,7 +543,7 @@ static void
 get_drone_location(float *lat, float *lon)
 {
     float latitude, longitude, speed_kph, heading, altitude;
-    gpsFix = fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude);
+   // gpsFix = fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude);
     
     *lat = latitude;
     *lon = longitude;
@@ -440,63 +603,63 @@ convertDegMinToDecDeg(float degMin)
 static int8_t
 get_destination(float *lat, float *lon)
 {
-    int i;
-    int tmplength;
-    char c;
-    uint16_t len;
-    uint16_t statuscode;
-    char response[256];
-    StaticJsonBuffer<200> jsonBuffer;
-    
-    Serial.print("Request: ");
-    Serial.print(URL);
-    
-    // Get location
-    if (!fona.HTTP_GET_start(URL, &statuscode, &len)) {
-        Serial.println("Failed!");
-        return -1;
-    }
-
-    if (statuscode != 200)
-        return -1;
-    
-    i = 0;
-    tmplength = len;
-    
-    while (len > 0) {  
-        while (fona.available() > 0) {
-            c = fona.read();
-            if (c == -1)
-                continue;
-            
-            // Serial.write is too slow, we'll write directly to Serial register!
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
-            loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
-            UDR0 = c;
-#else
-            response[i] = c;
-            Serial.write(c);
-#endif
-            len--;
-            i++;
-        }
-    }
-    
-    fona.HTTP_GET_end();
-
-    if (tmplength > 0) {
-        response[tmplength] = '\0';
-        JsonObject& root = jsonBuffer.parseObject(response);
-    
-        if (root.success()) { 
-            *lat = root["lat"].as<float>();
-            *lon = root["lon"].as<float>();
-            
-            return 0;
-        }
-    }
-
-    return -1;
+//    int i;
+//    int tmplength;
+//    char c;
+//    uint16_t len;
+//    uint16_t statuscode;
+//    char response[256];
+//    StaticJsonBuffer<200> jsonBuffer;
+//    
+//    Serial.print("Request: ");
+//    Serial.print(URL);
+//    
+//    // Get location
+//    if (!fona.HTTP_GET_start(URL, &statuscode, &len)) {
+//        Serial.println("Failed!");
+//        return -1;
+//    }
+//
+//    if (statuscode != 200)
+//        return -1;
+//    
+//    i = 0;
+//    tmplength = len;
+//    
+//    while (len > 0) {  
+//        while (fona.available() > 0) {
+//            c = fona.read();
+//            if (c == -1)
+//                continue;
+//            
+//            // Serial.write is too slow, we'll write directly to Serial register!
+//#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega168__)
+//            loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
+//            UDR0 = c;
+//#else
+//            response[i] = c;
+//            Serial.write(c);
+//#endif
+//            len--;
+//            i++;
+//        }
+//    }
+//    
+//    fona.HTTP_GET_end();
+//
+//    if (tmplength > 0) {
+//        response[tmplength] = '\0';
+//        JsonObject& root = jsonBuffer.parseObject(response);
+//    
+//        if (root.success()) { 
+//            *lat = root["lat"].as<float>();
+//            *lon = root["lon"].as<float>();
+//            
+//            return 0;
+//        }
+//    }
+//
+//    return -1;
 }
 
 ISR(PCINT0_vect){
