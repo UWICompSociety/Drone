@@ -8,6 +8,13 @@
 #include "Adafruit_FONA.h"
 #include "ArduinoJson.h"
 
+#include <stddef.h>
+
+//#include "pel_log.h"
+//#include "pel_msp.h"
+
+#define INBUF_SIZE  64
+
 /* Pins */
 #define FONA_RX         9
 #define FONA_TX         8
@@ -38,10 +45,10 @@ byte last_channel_6;
 #define STATE_LANDING 4
 #define STATE_DONE 5
 
-#define MAX_THROTTLE 1600
-#define MIN_THROTTLE 1000
-#define FORWARD_PITCH 1540
-#define BACKWARD_PITCH 1460
+#define MAX_THROTTLE 1640
+#define MIN_THROTTLE 1200
+#define FORWARD_PITCH 1550
+#define BACKWARD_PITCH 1480
 #define DEFAULT_PITCH 1500
 #define DEFAULT_ROLL 1500
 #define DEFAULT_YAW 1500
@@ -234,16 +241,16 @@ auto_pilot()
     switch(current_state) 
     {
         case STATE_TAKEOFF:
-            take_off(500,200);
+            take_off(600,70);
             break;
         case STATE_HOVER:
-            hover(1000);
+            hover(500);
             break;
         case STATE_MOVEFORWARD:
-            move_forward(7000);
+            move_forward(6000);
             break;
         case STATE_LANDING:
-            land(1000,100);
+            land(2000,20);
             break;
         case STATE_DONE: //must be last state
             break;
@@ -661,6 +668,54 @@ get_destination(float *lat, float *lon)
 //
 //    return -1;
 }
+
+
+//MSP Protocol functions (statistics from the drone)
+/*static void 
+getIMU(IMUValues* imuValues)
+{
+   uint8_t buf[INBUF_SIZE];
+   uint8_t data = 0;
+  (void) pel_msp_send(MSP_RAW_IMU, (uint8_t *) &data, 0);
+  (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
+  (void) pel_msp_raw_imu(buf,imuValues);
+}
+
+static void
+getAttitude(Attitude* attitude)
+{
+    uint8_t buf[INBUF_SIZE];
+    uint8_t data = 0;
+    (void) pel_msp_send(MSP_ATTITUDE, (uint8_t *) &data, 0);
+    (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
+    (void) pel_msp_attitude(buf,attitude);
+}
+
+static void
+getAltitude(Altitude* altitude)
+{
+    uint8_t buf[INBUF_SIZE];
+    uint8_t data = 0;
+    (void) pel_msp_send(MSP_ALTITUDE, (uint8_t *) &data, 0);
+    (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
+    (void) pel_msp_altitude(buf,altitude);
+    
+}
+
+static void
+getAnalog(Analog* analog)
+{
+    uint8_t buf[INBUF_SIZE];
+    uint8_t data = 0;
+    (void) pel_msp_send(MSP_ANALOG, (uint8_t *) &data, 0);
+    (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
+    (void) pel_msp_analog(buf,analog);
+    
+}*/
+
+
+
+
 
 ISR(PCINT0_vect){
   current_time = micros();
