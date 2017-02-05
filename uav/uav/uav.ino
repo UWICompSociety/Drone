@@ -44,11 +44,13 @@ byte last_channel_6;
 #define STATE_MOVEFORWARD 3
 #define STATE_LANDING 4
 #define STATE_DONE 5
+#define STATE_MOVEBACK 6
+#define STATE_ROLLRIGHT 7
 
-#define MAX_THROTTLE 1640
+#define MAX_THROTTLE 1660
 #define MIN_THROTTLE 1200
-#define FORWARD_PITCH 1550
-#define BACKWARD_PITCH 1480
+#define FORWARD_PITCH 1570
+#define BACKWARD_PITCH 1450
 #define DEFAULT_PITCH 1500
 #define DEFAULT_ROLL 1500
 #define DEFAULT_YAW 1500
@@ -58,7 +60,7 @@ byte last_channel_6;
 #define RIGHT_TURN 1540
 
 
-int states[] = {STATE_TAKEOFF,STATE_HOVER,STATE_MOVEFORWARD,STATE_HOVER,STATE_LANDING,STATE_DONE }; //flight sequence
+int states[] = {STATE_TAKEOFF,STATE_MOVEFORWARD,STATE_HOVER,STATE_LANDING,STATE_DONE }; //flight sequence
 
 int current_state;
 int stateCounter=0;
@@ -134,6 +136,8 @@ static void auto_pilot();
 static void take_off(int increment_time,int increment_amount);
 static void hover(int hover_time);
 static void move_forward(int move_time);
+static void move_back(int move_time);
+static void bank_right(int move_time);
 static void land(int increment_time,int increment_amount);
 static void switch_state();
 
@@ -158,18 +162,6 @@ setup(void)
 void
 loop(void)
 {
-//    Serial.print("Getting a fix");
-//    delay(5000);
-//    
-//    get_drone_location(&drone_lat, &drone_lon);
-//    get_destination(&dest_lat, &dest_lon);
-//   
-//    dest_lat=18.005872;
-//    dest_lon=-76.747358;
-//    
-//    calc_distance_and_bearing(drone_lat, drone_lon, dest_lat, dest_lon,&target_distance,&target_bearing); /* distance to target */
-
-    //print_reciever_values();
     
     if(!armed && aux2_chan>=1200) //if drone is not armed and aux2 is set to 2000
     {
@@ -217,19 +209,6 @@ loop(void)
         apply_aux1(aux1_chan);
       }
 
-   // auto_pilot();
-//    Serial.print("Throttle ");
-//    Serial.println(current_throttle);
-//    Serial.print("Roll ");
-//    Serial.println(current_roll);
-//    Serial.print("Yaw ");
-//    Serial.println(current_yaw);
-//    Serial.print("Pitch ");
-//    Serial.println(current_pitch);
-    
-    
-
-   
 }
 
 static void 
@@ -241,7 +220,7 @@ auto_pilot()
     switch(current_state) 
     {
         case STATE_TAKEOFF:
-            take_off(600,70);
+            take_off(600,300);
             break;
         case STATE_HOVER:
             hover(500);
@@ -250,8 +229,13 @@ auto_pilot()
             move_forward(6000);
             break;
         case STATE_LANDING:
-            land(2000,20);
+            land(2500,20);
             break;
+        case STATE_MOVEBACK:
+            move_back(3000);
+            break;
+        case STATE_ROLLRIGHT:
+            bank_right(3000);
         case STATE_DONE: //must be last state
             break;
     }
@@ -260,6 +244,7 @@ auto_pilot()
 static void
 take_off(int increment_time,int increment_amount)
 {
+    //current_roll=1530;
    if(millis()-prev_time>=increment_time) //throttle is increased every defined milliseconds
    {
       //  Serial.println("Taking off");
@@ -267,7 +252,7 @@ take_off(int increment_time,int increment_amount)
         current_throttle+=increment_amount;
         if(current_throttle>=MAX_THROTTLE)
         {
-
+            //current_roll = DEFAULT_ROLL;
             current_throttle = MAX_THROTTLE;
             prev_time=0;
             next_state_timer = millis(); //next state timer needs to be reset each time so other state cane use it
@@ -670,6 +655,51 @@ get_destination(float *lat, float *lon)
 }
 
 
+// static bool
+// send_telemetry()
+// {
+//     IMUValues imuValues;
+//     getIMU(&imuValues);
+
+//     Attitude attitude;
+//     getAttitude(&attitude);
+
+//     Analog analog;
+//     getAnalog(&analog);
+
+
+
+//     StaticJsonBuffer<200> jsonBuffer;
+
+//     JsonObject& root = jsonBuffer.createObject();
+
+//     char lat_buffer[10];
+//     snprintf(lat_buffer, sizeof lat_buffer, "%f",drone_lat); 
+
+//     char lon_buffer[10];
+//     snprintf(lon_buffer, sizeof lon_buffer, "%f", drone_lon);
+    
+//     root["lat"] = lon_buffer;
+//     root["lat"] = lat_buffer;
+//     root["angx"] = attitude.angx;
+//     root["angy"] = attitude.angy;
+//     root["heading"] = attitude.heading;
+//     root["accx"] = imuValues.accx;
+//     root["accy"] = imuValues.accy;
+//     root["accz"] = imuValues.accz;
+//     root["gyrx"] = imuValues.gryx;
+//     root["gyry"] = imuValues.gyry;
+//     root["gyrz"] = imuValues.gyrz;
+//     root["magx"] = imuValues.magx;
+//     root["magy"] = imuValues.magy;
+//     root["magz"] = imuValues.magz;
+//     root["est_alt"] = altitude.est_alt;
+//     root["vario"] = altitude.vario;
+//     root["rc_throttle"] = 
+//     root["time"] = 1351824120;
+// }
+
+
 //MSP Protocol functions (statistics from the drone)
 /*static void 
 getIMU(IMUValues* imuValues)
@@ -712,6 +742,9 @@ getAnalog(Analog* analog)
     (void) pel_msp_analog(buf,analog);
     
 }*/
+
+// static void
+// getRCValues()
 
 
 

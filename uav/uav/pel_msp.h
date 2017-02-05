@@ -99,6 +99,10 @@ struct Analog{
     uint16_t amperage;
 };
 
+struct RCValues{
+    uint16_t* rc_values;
+};
+
 extern void pel_msp_attitude(uint8_t *buf,Attitude* attitude);
 extern void pel_msp_raw_gps(uint8_t *buf);
 extern void pel_msp_raw_imu(uint8_t *buf, IMUValues* imuValues);
