@@ -272,13 +272,15 @@ pel_msp_altitude(uint8_t *buf, Altitude* altitude)
 }
 
 void
-pel_msp_rc(uint8_t *buf)
+pel_msp_rc(uint8_t *buf,RCValues* rcValues)
 {
     int c;
     uint16_t a[16];
 
     for (c = 0; c < 16; c++)
         a[c] = readuint16(buf + 2 * c);
+
+    rcValues->rc_values = a;
 
     pel_log_debug("RC Values: ");
 

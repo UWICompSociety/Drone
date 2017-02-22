@@ -107,7 +107,7 @@ extern void pel_msp_attitude(uint8_t *buf,Attitude* attitude);
 extern void pel_msp_raw_gps(uint8_t *buf);
 extern void pel_msp_raw_imu(uint8_t *buf, IMUValues* imuValues);
 extern void pel_msp_altitude(uint8_t *buf, Altitude* altitude);
-extern void pel_msp_rc(uint8_t *buf);
+extern void pel_msp_rc(uint8_t *buf, RCValues* rcValues);
 extern void pel_msp_ident(uint8_t *buf);
 extern void pel_msp_status(uint8_t *buf);
 extern void pel_msp_servo(uint8_t *buf);

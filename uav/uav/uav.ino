@@ -10,8 +10,8 @@
 
 #include <stddef.h>
 
-//#include "pel_log.h"
-//#include "pel_msp.h"
+#include "pel_log.h"
+#include "pel_msp.h"
 
 #define INBUF_SIZE  64
 
@@ -47,7 +47,7 @@ byte last_channel_6;
 #define STATE_MOVEBACK 6
 #define STATE_ROLLRIGHT 7
 
-#define MAX_THROTTLE 1660
+#define MAX_THROTTLE 1690
 #define MIN_THROTTLE 1200
 #define FORWARD_PITCH 1570
 #define BACKWARD_PITCH 1450
@@ -655,53 +655,128 @@ get_destination(float *lat, float *lon)
 }
 
 
-// static bool
-// send_telemetry()
-// {
-//     IMUValues imuValues;
-//     getIMU(&imuValues);
+static bool
+send_telemetry()
+{
+    IMUValues imuValues;
+    getIMU(&imuValues);
 
-//     Attitude attitude;
-//     getAttitude(&attitude);
+    Attitude attitude;
+    getAttitude(&attitude);
 
-//     Analog analog;
-//     getAnalog(&analog);
+    Analog analog;
+    getAnalog(&analog);
+
+    RCValues rcValues;
+    getRCValues(&rcValues);
 
 
 
-//     StaticJsonBuffer<200> jsonBuffer;
+    StaticJsonBuffer<200> jsonBuffer;
 
-//     JsonObject& root = jsonBuffer.createObject();
+    JsonObject& root = jsonBuffer.createObject();
 
-//     char lat_buffer[10];
-//     snprintf(lat_buffer, sizeof lat_buffer, "%f",drone_lat); 
+    char lat_buffer[10];
+    snprintf(lat_buffer, sizeof lat_buffer, "%f",drone_lat); 
 
-//     char lon_buffer[10];
-//     snprintf(lon_buffer, sizeof lon_buffer, "%f", drone_lon);
-    
-//     root["lat"] = lon_buffer;
-//     root["lat"] = lat_buffer;
-//     root["angx"] = attitude.angx;
-//     root["angy"] = attitude.angy;
-//     root["heading"] = attitude.heading;
-//     root["accx"] = imuValues.accx;
-//     root["accy"] = imuValues.accy;
-//     root["accz"] = imuValues.accz;
-//     root["gyrx"] = imuValues.gryx;
-//     root["gyry"] = imuValues.gyry;
-//     root["gyrz"] = imuValues.gyrz;
-//     root["magx"] = imuValues.magx;
-//     root["magy"] = imuValues.magy;
-//     root["magz"] = imuValues.magz;
-//     root["est_alt"] = altitude.est_alt;
-//     root["vario"] = altitude.vario;
-//     root["rc_throttle"] = 
-//     root["time"] = 1351824120;
-// }
+    char lon_buffer[10];
+    snprintf(lon_buffer, sizeof lon_buffer, "%f", drone_lon);
+
+    char angx_buffer[10];
+    snprintf(angx_buffer, sizeof angx_buffer, "%d",(int)attitude.angx);
+
+    char angy_buffer[10];
+    snprintf(angy_buffer, sizeof angy_buffer, "%d",(int)attitude.angy);
+
+    char heading_buffer[10];
+    snprintf(heading_buffer, sizeof heading_buffer, "%d", (int)attitude.heading)
+
+    char accx_buffer[10];
+    snprintf(accx_buffer, sizeof accx_heading, "%d", (int) imuValues.accx);
+
+    char accy_buffer[10];
+    snprintf(accy_buffer, sizeof accy_buffer, "%d", (int) imuValues.accy);
+
+    char accz_buffer[10];
+    snprintf(accz_buffer, sizeof accz_buffer, "%d", (int) imuValues.accz);
+
+    char gyrx_buffer[10];
+    snprintf(gyrx_buffer, sizeof gryx_buffer, "%d", (int) imuValues.gyrx);
+
+    char gyry_buffer[10];
+    snprintf(gyry_buffer, sizeof gyry_buffer, "%d", (int) imuValues.gyry);
+
+    char gyrz_buffer[10];
+    snprintf(gyrz_buffer, sizeof gyrz_buffer, "%d", (int) imuValues.gyrz);
+
+    char magx_buffer[10];
+    snprintf(magx_buffer, sizeof magx_buffer, "%d", (int) imuValues.magx);
+
+    char magy_buffer[10];
+    snprintf(magy_buffer, sizeof magy_buffer, "%d", (int) imuValues.magy);
+
+    char magz_buffer[10];
+    snprintf(magz_buffer, sizeof magz_buffer, "%d", (int) imuValues.magz);
+
+    char estalt_buffer[10];
+    snprintf(estalt_buffer, sizeof estalt_buffer, "%d", (int) altitude.est_alt);
+
+    char vario_buffer[10];
+    snprintf(vario_buffer, sizeof estalt_buffer, "%d", (int) altitude.vario);
+
+
+    root["lat"] = lon_buffer;
+    root["lat"] = lat_buffer;
+    root["angx"] = angx_buffer;
+    root["angy"] = angy_buffer;
+    root["heading"] = heading_buffer;
+    root["accx"] = accx_buffer;
+    root["accy"] = accy_buffer;
+    root["accz"] = accz_buffer;
+    root["gyrx"] = gyrx_buffer;
+    root["gyry"] = gyry_buffer;
+    root["gyrz"] = gyrz_buffer;
+    root["magx"] = magx_buffer;
+    root["magy"] = magy_buffer;
+    root["magz"] = magz_buffer;
+    root["est_alt"] = estalt_buffer;
+    root["vario"] = vario_buffer;
+    root["rc_throttle"] = (int)rcValues.rc_values[0]
+    root["rc_pitch"] = (int)rcValues.rc_values[1]
+    root["rc_yaw"] = (int)rcValues.rc_values[2]
+    root["rc_roll"] = (int)rcValues.rc_values[3]
+    root["vbat"] = convert(&analog->vbat)
+
+}
+
+static char * 
+convert (uint8_t *a)
+{
+    int buffer1[9];
+    char buffer2[9];
+    int i;
+    char *buffer_pointer;
+
+    buffer1[8]='\0';
+
+    for(i=0; i<=7; i++)
+        buffer1[7-i]=( ((*a)>>i)&(0x01) );
+
+    for(i=0; i<=7; i++)
+        buffer2[i] = buffer1[i] + '0';
+
+    buffer2[8] = '\0';
+
+    puts(buffer2);
+
+    buffer_pointer = buffer2;
+
+    return buffer_pointer;
+}
 
 
 //MSP Protocol functions (statistics from the drone)
-/*static void 
+static void 
 getIMU(IMUValues* imuValues)
 {
    uint8_t buf[INBUF_SIZE];
@@ -741,10 +816,17 @@ getAnalog(Analog* analog)
     (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
     (void) pel_msp_analog(buf,analog);
     
-}*/
+}
 
-// static void
-// getRCValues()
+static void
+getRCValues(RCValues* rcValues)
+{
+    uint8_t buf[INBUF_SIZE];
+    uint8_t data = 0;
+    (void) pel_msp_send(MSP_RC, (uint8_t *) &data, 0);
+    (void) pel_msp_recv((uint8_t *) &buf, sizeof buf);
+    (void) pel_msp_rc(buf,rcValues);
+}
 
 
 
